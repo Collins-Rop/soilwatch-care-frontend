@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { getUserByEmail } from "@/lib/users";
 import { createSessionToken, sessionCookieOptions } from "@/lib/auth";
+
+const BACKEND_URL = process.env.FASTAPI_URL ?? "http://localhost:8000";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -12,15 +12,44 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
   }
 
-  const user = getUserByEmail(email);
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return NextResponse.json({ error: "Incorrect email or password." }, { status: 401 });
-  }
-  if (!user.is_active) {
-    return NextResponse.json({ error: "Your account is inactive. Contact your administrator." }, { status: 403 });
+  let accessToken: string;
+  try {
+    const loginRes = await fetch(`${BACKEND_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      cache: "no-store",
+    });
+    if (loginRes.status === 401 || loginRes.status === 403) {
+      return NextResponse.json({ error: "Incorrect email or password." }, { status: 401 });
+    }
+    if (!loginRes.ok) {
+      return NextResponse.json({ error: "Authentication service unavailable." }, { status: 503 });
+    }
+    const tokens = await loginRes.json();
+    accessToken = tokens.access_token;
+  } catch {
+    return NextResponse.json({ error: "Authentication service unavailable." }, { status: 503 });
   }
 
-  const token = await createSessionToken({ email: user.email, name: user.name, role: user.role });
+  let name: string;
+  let role: "admin" | "user";
+  try {
+    const meRes = await fetch(`${BACKEND_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    });
+    if (!meRes.ok) {
+      return NextResponse.json({ error: "Authentication service unavailable." }, { status: 503 });
+    }
+    const user = await meRes.json();
+    name = user.full_name ?? email;
+    role = user.role?.name === "administrator" ? "admin" : "user";
+  } catch {
+    return NextResponse.json({ error: "Authentication service unavailable." }, { status: 503 });
+  }
+
+  const token = await createSessionToken({ email, name, role });
   const response = NextResponse.json({ ok: true });
   response.cookies.set(sessionCookieOptions(token));
   return response;

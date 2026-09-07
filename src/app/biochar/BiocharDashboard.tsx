@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { BiocharDataSource } from "./ona";
 import {
   computeKpis, computeSiteTrends, computeOperatorScores, computeDecisionSnapshot, daysAgo,
@@ -22,7 +22,7 @@ const C = {
 };
 
 type Tab = "production" | "quality" | "operations" | "records";
-type Panel = "snapshot" | "ai" | null;
+type Panel = "snapshot" | null;
 
 const TABS: { id: Tab; labelKey: string }[] = [
   { id: "production", labelKey: "biochar.tab.production" },
@@ -49,28 +49,6 @@ function KpiCard({ label, value, sub, flag }: { label: string; value: string; su
   );
 }
 
-interface ChatMessage { role: "user" | "assistant"; content: string }
-
-function buildContext(kpis: ReturnType<typeof computeKpis>, df: { batch_id: string; kiln_id: string; production_date: string; biochar_wet_weight_kg: number; compliance_fails: number }[]): string {
-  return [
-    `Total batches: ${kpis.totalBatches}`,
-    `This month: ${kpis.monthBatches}, this week: ${kpis.weekBatches}`,
-    `Total biochar (wet, measured): ${kpis.totalBiochar.toFixed(1)} kg`,
-    `Regain estimate (bucket count, unweighed): ${kpis.regainBiochar.toFixed(1)} kg`,
-    `Combined produced: ${kpis.combinedBiochar.toFixed(1)} kg`,
-    `Dry biochar (est., full records only): ${kpis.dryBiochar.toFixed(1)} kg`,
-    `Active kilns: ${kpis.activeKilns} / ${kpis.totalKilns}`,
-    `Active operators: ${kpis.activeOps} / ${kpis.totalOps}`,
-    `Quality pass rate: ${kpis.qualPassRate.toFixed(1)}%`,
-    `CSI compliant: ${kpis.csiCompliant} / ${kpis.totalBatches}`,
-    `Compliance flags (30d): ${kpis.compFlagsN}`,
-    `Safety incidents: ${kpis.safetyInc}`,
-    `Avg pyrolysis: ${kpis.avgDuration.toFixed(0)} min (${kpis.minDuration}–${kpis.maxDuration} min)`,
-    `Samples collected: ${kpis.samplesCol} / ${kpis.totalBatches}`,
-    `Recent: ${df.slice(0, 5).map(b => `${b.batch_id}@${b.kiln_id} ${b.production_date} ${b.biochar_wet_weight_kg.toFixed(0)}kg fails:${b.compliance_fails}`).join(", ")}`,
-  ].join("\n");
-}
-
 interface Props { dataSource: BiocharDataSource }
 
 export default function BiocharDashboard({ dataSource }: Props) {
@@ -80,11 +58,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
   const [activeTab, setActiveTab]     = useState<Tab>("production");
   const [drillFilter, setDrillFilter] = useState<string | null>(null);
   const [openPanel, setOpenPanel]     = useState<Panel>(null);
-  const [aiMessages, setAiMessages]   = useState<ChatMessage[]>([]);
-  const [aiInput, setAiInput]         = useState("");
-  const [aiLoading, setAiLoading]     = useState(false);
-  const aiInputRef = useRef<HTMLInputElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const earliest = allBatches.length ? allBatches[allBatches.length - 1].production_date : daysAgo(90);
   const latest   = allBatches.length ? allBatches[0].production_date : new Date().toISOString().slice(0, 10);
@@ -106,30 +79,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
 
   function togglePanel(p: Panel) {
     setOpenPanel(prev => (prev === p ? null : p));
-  }
-
-  async function sendAiMessage() {
-    const q = aiInput.trim();
-    if (!q || aiLoading) return;
-    const next: ChatMessage[] = [...aiMessages, { role: "user", content: q }];
-    setAiMessages(next);
-    setAiInput("");
-    setAiLoading(true);
-    try {
-      const res = await fetch("/api/biochar/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ context: buildContext(kpis, df), messages: next }),
-      });
-      const data = await res.json().catch(() => ({ answer: t("biochar.ai.unexpected") }));
-      setAiMessages(m => [...m, { role: "assistant", content: data.answer ?? t("biochar.ai.noAnswer") }]);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-    } catch {
-      setAiMessages(m => [...m, { role: "assistant", content: t("biochar.ai.requestFailed") }]);
-    } finally {
-      setAiLoading(false);
-      setTimeout(() => aiInputRef.current?.focus(), 50);
-    }
   }
 
   const criticalCount = snapshot.critical.length;
@@ -187,17 +136,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
               {t("biochar.decisionSnapshot")}
             </button>
 
-            {/* Ask AI button */}
-            <button
-              onClick={() => togglePanel("ai")}
-              className="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors hover:bg-stone-50"
-              style={{
-                borderColor: openPanel === "ai" ? C.brand : C.border,
-                color: openPanel === "ai" ? C.brand : C.text,
-                background: openPanel === "ai" ? "#fff7ed" : undefined,
-              }}>
-              {t("biochar.askAi")}
-            </button>
           </div>
         </div>
       </header>
@@ -220,14 +158,7 @@ export default function BiocharDashboard({ dataSource }: Props) {
         <KpiCard
           label={t("biochar.kpi.biocharProduced")}
           value={hasData ? `${kpis.combinedBiochar.toFixed(0)} kg` : "—"}
-          sub={
-            !hasData ? undefined
-            : kpis.regainBiochar > 0
-              ? t("biochar.kpi.biocharProduced.breakdown", {
-                  measured: kpis.totalBiochar.toFixed(0), est: kpis.regainBiochar.toFixed(0),
-                })
-              : t("biochar.kpi.biocharProduced.sub", { n: kpis.dryBiochar.toFixed(0) })
-          }
+          sub={hasData ? t("biochar.kpi.biocharProduced.sub", { n: kpis.dryBiochar.toFixed(0) }) : undefined}
         />
         <KpiCard
           label={t("biochar.kpi.activeKilns")}
@@ -389,86 +320,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
         </div>
       </aside>
 
-      {/* ── Ask AI drawer ──────────────────────────────────────────── */}
-      <aside
-        className="fixed top-0 right-0 h-full z-50 flex flex-col bg-white shadow-2xl transition-transform duration-200"
-        style={{
-          width: 420,
-          borderLeft: `1px solid ${C.border}`,
-          transform: openPanel === "ai" ? "translateX(0)" : "translateX(100%)",
-        }}>
-        <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0" style={{ borderColor: C.border }}>
-          <div>
-            <h2 className="text-sm font-semibold" style={{ color: C.text }}>{t("biochar.ai.title")}</h2>
-            <p className="text-xs mt-0.5" style={{ color: C.muted }}>{t("biochar.ai.subtitle")}</p>
-          </div>
-          <button onClick={() => setOpenPanel(null)}
-            className="text-xs px-2.5 py-1 rounded border hover:bg-stone-50 transition-colors"
-            style={{ borderColor: C.border, color: C.muted }}>
-            {t("biochar.ai.close")}
-          </button>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
-          {aiMessages.length === 0 && (
-            <div className="space-y-2 pt-2">
-              {[
-                t("biochar.ai.suggestion1"),
-                t("biochar.ai.suggestion2"),
-                t("biochar.ai.suggestion3"),
-              ].map(q => (
-                <button key={q} onClick={() => setAiInput(q)}
-                  className="w-full text-left text-xs px-3 py-2 rounded-lg border hover:bg-stone-50 transition-colors"
-                  style={{ borderColor: C.border, color: C.muted }}>
-                  {q}
-                </button>
-              ))}
-            </div>
-          )}
-          {aiMessages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className="max-w-[85%] rounded-xl px-3 py-2 text-sm"
-                style={{
-                  background: m.role === "user" ? C.brand : "#f4f4f3",
-                  color: m.role === "user" ? "#fff" : C.text,
-                }}>
-                {m.content}
-              </div>
-            </div>
-          ))}
-          {aiLoading && (
-            <div className="flex justify-start">
-              <div className="rounded-xl px-3 py-2 text-sm" style={{ background: "#f4f4f3", color: C.muted }}>
-                {t("biochar.ai.thinking")}
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input */}
-        <div className="px-4 py-3 border-t flex gap-2 flex-shrink-0" style={{ borderColor: C.border }}>
-          <input
-            ref={aiInputRef}
-            type="text"
-            value={aiInput}
-            onChange={e => setAiInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendAiMessage()}
-            placeholder={t("biochar.ai.placeholder")}
-            className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none"
-            style={{ borderColor: C.border }}
-            disabled={aiLoading}
-          />
-          <button
-            onClick={sendAiMessage}
-            disabled={aiLoading || !aiInput.trim()}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity disabled:opacity-40"
-            style={{ background: C.brand }}>
-            {t("biochar.ai.send")}
-          </button>
-        </div>
-      </aside>
     </div>
   );
 }

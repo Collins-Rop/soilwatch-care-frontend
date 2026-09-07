@@ -1,13 +1,8 @@
-/**
- * JWT session utilities. Mirrors auth.py session and domain logic.
- * Cookie: sw_session (httpOnly, SameSite=Lax)
- */
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 
 const COOKIE_NAME = "sw_session";
-const ALLOWED_DOMAINS = ["soilwatch.eu", "care.org", "care.et"];
 const SESSION_DAYS = 7;
 
 function secret(): Uint8Array {
@@ -75,13 +70,3 @@ export function clearCookieOptions() {
   };
 }
 
-export function getAllowedDomains(): string[] {
-  const env = process.env.ALLOWED_DOMAINS;
-  if (env) return env.split(",").map(d => d.trim().toLowerCase().replace(/^@/, ""));
-  return ALLOWED_DOMAINS;
-}
-
-export function isAllowedDomain(email: string): boolean {
-  const domain = email.toLowerCase().split("@")[1] ?? "";
-  return getAllowedDomains().includes(domain);
-}
