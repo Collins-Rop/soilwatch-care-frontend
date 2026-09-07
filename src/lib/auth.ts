@@ -1,16 +1,3 @@
-/**
- * Auth utilities for the Next.js frontend.
- *
- * Three cookies are stored after a successful login:
- *   sw_session       – signed frontend JWT (display info: userId, email, fullName, role)
- *   sw_access_token  – backend JWT (24 h) forwarded to backend API calls
- *   sw_refresh_token – backend JWT (7 d) used to obtain new access tokens
- *
- * Middleware verifies sw_session (fast, edge-compatible via jose).
- * Server components call getSession() to read the same cookie.
- * Backend API calls attach sw_access_token via getAccessToken().
- */
-
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { type NextRequest } from "next/server";
@@ -19,9 +6,8 @@ export const SESSION_COOKIE  = "sw_session";
 export const ACCESS_COOKIE   = "sw_access_token";
 export const REFRESH_COOKIE  = "sw_refresh_token";
 
-const SESSION_DAYS           = 7;   // matches backend REFRESH_TOKEN_EXPIRE_DAYS
-const ACCESS_TOKEN_SECONDS   = 24 * 3600;    // 24 h
-const REFRESH_TOKEN_SECONDS  = 7 * 24 * 3600; // 7 d
+const COOKIE_NAME = "sw_session";
+const SESSION_DAYS = 7;
 
 function secret(): Uint8Array {
   const key = process.env.AUTH_SECRET ?? "soilwatch-dev-secret-change-in-production";
@@ -95,10 +81,3 @@ export function accessCookieOptions(token: string) {
   return { name: ACCESS_COOKIE, value: token, httpOnly: true, secure: isProd, sameSite: "lax" as const, maxAge: ACCESS_TOKEN_SECONDS, path: "/" };
 }
 
-export function refreshCookieOptions(token: string) {
-  return { name: REFRESH_COOKIE, value: token, httpOnly: true, secure: isProd, sameSite: "lax" as const, maxAge: REFRESH_TOKEN_SECONDS, path: "/" };
-}
-
-export function clearCookieOptions(name: string) {
-  return { name, value: "", httpOnly: true, secure: isProd, sameSite: "lax" as const, maxAge: 0, path: "/" };
-}

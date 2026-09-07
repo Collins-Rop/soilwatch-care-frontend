@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { loadBiocharData } from "./biochar/ona";
 import { ACTIVE_WINDOW_DAYS, COMPLIANCE_WINDOW_DAYS } from "./biochar/data";
+import { daysAgo } from "./biochar/compute";
 import { getT } from "@/lib/i18n/server";
 import { qualityLabel } from "@/lib/i18n/enumLabels";
 
@@ -14,12 +15,6 @@ const C = {
   warning: "#b45309", warningBg: "#fffbeb",
   bg: "#fafaf8",
 };
-
-function daysAgo(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
-}
 
 function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: "green" | "red" | "amber" | "brand" }) {
   const fg = accent === "green" ? C.success : accent === "red" ? C.danger : accent === "amber" ? C.warning : accent === "brand" ? C.brand : C.text;

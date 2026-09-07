@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, FlameKindling, MapPin, FileBarChart2, Menu, X } from "lucide-react";
+import { LayoutDashboard, FlameKindling, MapPin, FileBarChart2, Menu, X, LogOut } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import LanguageSwitcher from "./LanguageSwitcher";
 
@@ -122,15 +122,14 @@ export default function Sidebar({ userName }: { userName?: string }) {
         </nav>
 
         {/* Footer */}
-        {userName && (
-          <div className="px-4 py-4 border-t border-stone-800">
-            <p className="text-xs text-stone-400 truncate mb-2">{userName}</p>
-            <button onClick={signOut}
-              className="text-xs text-stone-500 hover:text-stone-300 transition-colors">
-              {t("sidebar.signOut")}
-            </button>
-          </div>
-        )}
+        <div className="px-4 py-4 border-t border-stone-800">
+          {userName && <p className="text-xs text-stone-400 truncate mb-2">{userName}</p>}
+          <button onClick={signOut}
+            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-red-400 transition-colors">
+            <LogOut size={12} />
+            {t("sidebar.signOut")}
+          </button>
+        </div>
       </aside>
     </>
   );

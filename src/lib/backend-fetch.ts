@@ -1,6 +1,6 @@
 const BACKEND_URL = process.env.FASTAPI_URL ?? "http://localhost:8000";
-const SERVICE_EMAIL = process.env.FASTAPI_SERVICE_EMAIL;
-const SERVICE_PASSWORD = process.env.FASTAPI_SERVICE_PASSWORD;
+const SERVICE_EMAIL = process.env.ADMIN_EMAIL;
+const SERVICE_PASSWORD = process.env.ADMIN_PASSWORD;
 
 let cachedToken: string | null = null;
 

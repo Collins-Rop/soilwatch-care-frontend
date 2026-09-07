@@ -48,17 +48,8 @@ export default function ReportGenerator() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch("/api/reports/archive", { cache: "no-store" })
-      .then(res => (res.ok ? res.json() : { reports: [] }))
-      .then(data => {
-        if (!cancelled) setArchive(Array.isArray(data.reports) ? data.reports : []);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    loadArchive();
+  }, [loadArchive]);
 
   async function triggerDownload(url: string, fallbackName: string) {
     const res = await fetch(url, { cache: "no-store" });

@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
-import {
-  accessCookieOptions,
-  refreshCookieOptions,
-  sessionCookieOptions,
-  type SessionPayload,
-} from "@/lib/auth";
+import { createSessionToken, sessionCookieOptions } from "@/lib/auth";
 
-const BACKEND = process.env.FASTAPI_URL ?? "http://localhost:8000";
+const BACKEND_URL = process.env.FASTAPI_URL ?? "http://localhost:8000";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -17,50 +12,44 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
   }
 
-  // 1. Authenticate with backend → get tokens
-  let loginRes: Response;
+  let accessToken: string;
   try {
-    loginRes = await fetch(`${BACKEND}/auth/login`, {
-      method:  "POST",
+    const loginRes = await fetch(`${BACKEND_URL}/auth/login`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password }),
+      cache: "no-store",
     });
+    if (loginRes.status === 401 || loginRes.status === 403) {
+      return NextResponse.json({ error: "Incorrect email or password." }, { status: 401 });
+    }
+    if (!loginRes.ok) {
+      return NextResponse.json({ error: "Authentication service unavailable." }, { status: 503 });
+    }
+    const tokens = await loginRes.json();
+    accessToken = tokens.access_token;
   } catch {
-    return NextResponse.json({ error: "Service unavailable. Please try again later." }, { status: 502 });
+    return NextResponse.json({ error: "Authentication service unavailable." }, { status: 503 });
   }
 
-  const tokenData = await loginRes.json().catch(() => ({}));
-  if (!loginRes.ok) {
-    const detail = typeof tokenData.detail === "string" ? tokenData.detail : "Invalid email or password.";
-    return NextResponse.json({ error: detail }, { status: loginRes.status });
-  }
-
-  const accessToken  = tokenData.access_token  as string;
-  const refreshToken = tokenData.refresh_token as string;
-
-  // 2. Fetch user profile using the access token
-  let meRes: Response;
+  let name: string;
+  let role: "admin" | "user";
   try {
-    meRes = await fetch(`${BACKEND}/auth/me`, {
+    const meRes = await fetch(`${BACKEND_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
     });
+    if (!meRes.ok) {
+      return NextResponse.json({ error: "Authentication service unavailable." }, { status: 503 });
+    }
+    const user = await meRes.json();
+    name = user.full_name ?? email;
+    role = user.role?.name === "administrator" ? "admin" : "user";
   } catch {
-    return NextResponse.json({ error: "Authentication succeeded but your profile could not be loaded. Please try again." }, { status: 502 });
+    return NextResponse.json({ error: "Authentication service unavailable." }, { status: 503 });
   }
 
-  const user = await meRes.json().catch(() => ({}));
-  if (!meRes.ok) {
-    return NextResponse.json({ error: "Authentication succeeded but your profile could not be loaded. Please try again." }, { status: 502 });
-  }
-
-  const payload: SessionPayload = {
-    userId:   String(user.id ?? ""),
-    email:    String(user.email ?? email),
-    fullName: String(user.full_name ?? email),
-    role:     String(user.role?.name ?? "user"),
-  };
-
-  // 3. Set all three httpOnly cookies
+  const token = await createSessionToken({ email, name, role });
   const response = NextResponse.json({ ok: true });
   response.cookies.set(await sessionCookieOptions(payload));
   response.cookies.set(accessCookieOptions(accessToken));
