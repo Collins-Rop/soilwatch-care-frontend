@@ -1,6 +1,10 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
+
+export const SESSION_COOKIE  = "sw_session";
+export const ACCESS_COOKIE   = "sw_access_token";
+export const REFRESH_COOKIE  = "sw_refresh_token";
 
 const COOKIE_NAME = "sw_session";
 const SESSION_DAYS = 7;
@@ -10,10 +14,15 @@ function secret(): Uint8Array {
   return new TextEncoder().encode(key);
 }
 
+const isProd = process.env.NODE_ENV === "production";
+
+// ── Session payload (stored in sw_session, signed by Next.js) ────────────
+
 export interface SessionPayload {
-  email: string;
-  name: string;
-  role: "admin" | "user";
+  userId:   string;
+  email:    string;
+  fullName: string;
+  role:     string; // role name from backend, e.g. "admin" | "user"
 }
 
 export async function createSessionToken(payload: SessionPayload): Promise<string> {
@@ -33,40 +42,42 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
   }
 }
 
+// ── Read session (server components / layouts) ────────────────────────────
+
 export async function getSession(): Promise<SessionPayload | null> {
   const store = await cookies();
-  const token = store.get(COOKIE_NAME)?.value;
+  const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   return verifySessionToken(token);
 }
 
+// Edge-compatible (middleware) — reads from the request directly
 export async function getSessionFromRequest(req: NextRequest): Promise<SessionPayload | null> {
-  const token = req.cookies.get(COOKIE_NAME)?.value;
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   return verifySessionToken(token);
 }
 
-export function sessionCookieOptions(token: string) {
-  return {
-    name: COOKIE_NAME,
-    value: token,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    maxAge: SESSION_DAYS * 24 * 3600,
-    path: "/",
-  };
+// ── Read backend tokens (server components / API routes) ─────────────────
+
+export async function getAccessToken(): Promise<string | undefined> {
+  const store = await cookies();
+  return store.get(ACCESS_COOKIE)?.value;
 }
 
-export function clearCookieOptions() {
-  return {
-    name: COOKIE_NAME,
-    value: "",
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    maxAge: 0,
-    path: "/",
-  };
+export async function getRefreshToken(): Promise<string | undefined> {
+  const store = await cookies();
+  return store.get(REFRESH_COOKIE)?.value;
+}
+
+// ── Cookie option builders ────────────────────────────────────────────────
+
+export async function sessionCookieOptions(payload: SessionPayload) {
+  const token = await createSessionToken(payload);
+  return { name: SESSION_COOKIE, value: token, httpOnly: true, secure: isProd, sameSite: "lax" as const, maxAge: SESSION_DAYS * 24 * 3600, path: "/" };
+}
+
+export function accessCookieOptions(token: string) {
+  return { name: ACCESS_COOKIE, value: token, httpOnly: true, secure: isProd, sameSite: "lax" as const, maxAge: ACCESS_TOKEN_SECONDS, path: "/" };
 }
 
