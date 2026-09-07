@@ -20,8 +20,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={locale} className="h-full">
       <body className="h-full flex overflow-hidden bg-[#fafaf8]">
         <LanguageProvider initialLocale={locale}>
-          {session && <Sidebar userName={session.fullName} />}
-          <main className="flex-1 overflow-y-auto">{children}</main>
+          {session && <Sidebar userName={session.name} />}
+          <main className={`flex-1 overflow-y-auto ${session ? "pt-14 lg:pt-0" : ""}`}>{children}</main>
         </LanguageProvider>
       </body>
     </html>
