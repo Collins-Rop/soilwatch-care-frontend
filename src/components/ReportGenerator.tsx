@@ -4,6 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { FileText, Loader2, Download, Trash2 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
+const C = {
+  border: "#e7e5e4", text: "#1c1917", muted: "#78716c",
+  brand: "#c2410c", brandBg: "#fff7ed",
+  danger: "#b91c1c", dangerBg: "#fef2f2",
+};
+
 type Format = "pdf" | "docx";
 
 interface ArchivedReport {
@@ -47,9 +53,7 @@ export default function ReportGenerator() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    loadArchive();
-  }, [loadArchive]);
+  useEffect(() => { loadArchive(); }, [loadArchive]);
 
   async function triggerDownload(url: string, fallbackName: string) {
     const res = await fetch(url, { cache: "no-store" });
@@ -97,48 +101,43 @@ export default function ReportGenerator() {
   }
 
   return (
-    <section className="bg-white rounded-lg border p-4" style={{ borderColor: "#e9ecef" }}>
-      <div className="flex items-start gap-3">
-        <div className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#D5F5E3" }}>
-          <FileText size={16} style={{ color: "#27AE60" }} />
-        </div>
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold" style={{ color: "#1F3864" }}>{t("reports.generate.heading")}</h2>
-          <p className="mt-1 text-xs" style={{ color: "#6b7280" }}>{t("reports.generate.desc")}</p>
-        </div>
+    <section className="bg-white rounded-xl border p-5" style={{ borderColor: C.border }}>
+      <div className="mb-4">
+        <h2 className="text-sm font-semibold" style={{ color: C.text }}>{t("reports.generate.heading")}</h2>
+        <p className="mt-0.5 text-xs" style={{ color: C.muted }}>{t("reports.generate.desc")}</p>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <label className="text-xs sm:col-span-3" style={{ color: "#374151" }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <label className="text-xs sm:col-span-3" style={{ color: C.muted }}>
           {t("reports.generate.titleLabel")}
           <input
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
-            className="mt-1 w-full rounded-md border px-2.5 py-1.5 text-sm"
-            style={{ borderColor: "#d1d5db" }}
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-1"
+            style={{ borderColor: C.border, color: C.text }}
           />
         </label>
-        <label className="text-xs" style={{ color: "#374151" }}>
+        <label className="text-xs" style={{ color: C.muted }}>
           {t("reports.generate.from")}
           <input
             type="date"
             value={from}
             max={to || undefined}
             onChange={e => setFrom(e.target.value)}
-            className="mt-1 w-full rounded-md border px-2.5 py-1.5 text-sm"
-            style={{ borderColor: "#d1d5db" }}
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-1"
+            style={{ borderColor: C.border, color: C.text }}
           />
         </label>
-        <label className="text-xs" style={{ color: "#374151" }}>
+        <label className="text-xs" style={{ color: C.muted }}>
           {t("reports.generate.to")}
           <input
             type="date"
             value={to}
             min={from || undefined}
             onChange={e => setTo(e.target.value)}
-            className="mt-1 w-full rounded-md border px-2.5 py-1.5 text-sm"
-            style={{ borderColor: "#d1d5db" }}
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-1"
+            style={{ borderColor: C.border, color: C.text }}
           />
         </label>
       </div>
@@ -149,10 +148,12 @@ export default function ReportGenerator() {
             key={format}
             onClick={() => generate(format)}
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-white transition-opacity disabled:opacity-60"
-            style={{ background: "#27AE60" }}
+            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-60"
+            style={{ borderColor: C.border, color: busy === format ? C.brand : C.text }}
           >
-            {busy === format ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+            {busy === format
+              ? <Loader2 size={13} className="animate-spin" />
+              : <FileText size={13} />}
             {busy === format
               ? t("reports.generate.generating")
               : format === "pdf" ? t("reports.generate.pdf") : t("reports.generate.word")}
@@ -161,35 +162,38 @@ export default function ReportGenerator() {
       </div>
 
       {error && (
-        <p className="mt-2 text-xs" style={{ color: "#b91c1c" }}>{t("reports.generate.error")}</p>
+        <p className="mt-2 text-xs" style={{ color: C.danger }}>{t("reports.generate.error")}</p>
       )}
 
-      <div className="mt-5 border-t pt-4" style={{ borderColor: "#e9ecef" }}>
-        <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#6b7280" }}>
+      <div className="mt-5 border-t pt-4" style={{ borderColor: C.border }}>
+        <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: C.muted }}>
           {t("reports.archive.heading")}
         </h3>
         {archive.length === 0 ? (
-          <p className="mt-2 text-xs" style={{ color: "#9ca3af" }}>{t("reports.archive.empty")}</p>
+          <p className="text-xs" style={{ color: C.muted }}>{t("reports.archive.empty")}</p>
         ) : (
-          <ul className="mt-2 divide-y" style={{ borderColor: "#f1f3f5" }}>
+          <ul className="divide-y" style={{ borderColor: "#f4f4f3" }}>
             {archive.map(r => (
-              <li key={r.id} className="py-2 flex items-center gap-3">
+              <li key={r.id} className="py-2.5 flex items-center gap-3">
                 <span
                   className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase flex-shrink-0"
-                  style={{ background: r.format === "pdf" ? "#FEE2E2" : "#DBEAFE", color: r.format === "pdf" ? "#b91c1c" : "#1e40af" }}
+                  style={{
+                    background: r.format === "pdf" ? C.dangerBg : C.brandBg,
+                    color: r.format === "pdf" ? C.danger : C.brand,
+                  }}
                 >
                   {r.format}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm truncate" style={{ color: "#1F3864" }}>{r.title}</p>
-                  <p className="text-[11px]" style={{ color: "#9ca3af" }}>
+                  <p className="text-sm truncate" style={{ color: C.text }}>{r.title}</p>
+                  <p className="text-[11px]" style={{ color: C.muted }}>
                     {fmtDateTime(r.generated)} · {r.date_from} → {r.date_to} · {t("reports.archive.batches", { n: r.batches })} · {fmtBytes(r.size)}
                   </p>
                 </div>
                 <a
                   href={`/api/reports/archive/${r.id}`}
-                  className="inline-flex items-center gap-1 text-xs font-medium flex-shrink-0"
-                  style={{ color: "#27AE60" }}
+                  className="inline-flex items-center gap-1 text-xs font-medium flex-shrink-0 hover:underline"
+                  style={{ color: C.brand }}
                 >
                   <Download size={13} /> {t("reports.archive.download")}
                 </a>
@@ -197,11 +201,11 @@ export default function ReportGenerator() {
                   onClick={() => remove(r.id)}
                   disabled={deleting === r.id}
                   aria-label={t("reports.archive.delete")}
-                  className="flex-shrink-0 p-1 rounded hover:bg-red-50 disabled:opacity-50"
+                  className="flex-shrink-0 p-1 rounded hover:bg-stone-50 disabled:opacity-50"
                 >
                   {deleting === r.id
-                    ? <Loader2 size={13} className="animate-spin" style={{ color: "#9ca3af" }} />
-                    : <Trash2 size={13} style={{ color: "#b91c1c" }} />}
+                    ? <Loader2 size={13} className="animate-spin" style={{ color: C.muted }} />
+                    : <Trash2 size={13} style={{ color: C.muted }} />}
                 </button>
               </li>
             ))}

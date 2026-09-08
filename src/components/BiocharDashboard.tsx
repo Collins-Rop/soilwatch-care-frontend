@@ -1,16 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { BiocharDataSource } from "./ona";
+import type { BiocharDataSource } from "../app/biochar/ona";
 import {
   computeKpis, computeSiteTrends, computeOperatorScores, computeDecisionSnapshot, daysAgo,
-} from "./compute";
-import { ACTIVE_WINDOW_DAYS, COMPLIANCE_WINDOW_DAYS } from "./data";
-import TabProduction from "./tabs/TabProduction";
-import TabQuality from "./tabs/TabQuality";
-import TabOperations from "./tabs/TabOperations";
-import TabRecords from "./tabs/TabRecords";
+} from "../app/biochar/compute";
+import { ACTIVE_WINDOW_DAYS, COMPLIANCE_WINDOW_DAYS } from "../app/biochar/data";
+import TabProduction from "../app/biochar/tabs/TabProduction";
+import TabQuality from "../app/biochar/tabs/TabQuality";
+import TabOperations from "../app/biochar/tabs/TabOperations";
+import TabRecords from "../app/biochar/tabs/TabRecords";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { Card, CardContent } from "@/components/ui/card";
 
 const C = {
   brand: "#c2410c",
@@ -39,13 +40,17 @@ const ALERT_TYPE_KEYS: Record<string, string> = {
   "Idle kiln": "biochar.alert.idleKiln",
 };
 
-function KpiCard({ label, value, sub, flag }: { label: string; value: string; sub?: string; flag?: boolean }) {
+function KpiCard({ label, value, sub, flag }: {
+  label: string; value: string; sub?: string; flag?: boolean;
+}) {
   return (
-    <div className="bg-white rounded-xl border p-4 flex flex-col" style={{ borderColor: C.border }}>
-      <p className="text-xs font-medium" style={{ color: C.muted }}>{label}</p>
-      <p className="text-2xl font-bold mt-1 leading-tight" style={{ color: flag ? C.danger : C.text }}>{value}</p>
-      {sub && <p className="text-xs mt-1.5" style={{ color: C.muted }}>{sub}</p>}
-    </div>
+    <Card>
+      <CardContent className="flex flex-col">
+        <p className="text-xs font-medium" style={{ color: C.muted }}>{label}</p>
+        <p className="text-2xl font-bold mt-1 leading-tight" style={{ color: C.text }}>{value}</p>
+        {sub && <p className="text-xs mt-1" style={{ color: C.muted }}>{sub}</p>}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -86,7 +91,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
   return (
     <div className="min-h-full" style={{ background: C.bg }}>
 
-      {/* ── Header ─────────────────────────────────────────────────── */}
       <header className="border-b bg-white px-6 py-4" style={{ borderColor: C.border }}>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -99,7 +103,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Date range */}
             <span className="text-xs" style={{ color: C.muted }}>{t("biochar.period")}</span>
             <input type="date" value={dateFrom} max={dateTo}
               onChange={e => setDateFrom(e.target.value)}
@@ -120,14 +123,12 @@ export default function BiocharDashboard({ dataSource }: Props) {
 
             <div className="w-px h-5 mx-1" style={{ background: C.border }} />
 
-            {/* Decision Snapshot button */}
             <button
               onClick={() => togglePanel("snapshot")}
               className="relative flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors hover:bg-stone-50"
               style={{
                 borderColor: openPanel === "snapshot" ? C.brand : C.border,
                 color: openPanel === "snapshot" ? C.brand : C.text,
-                background: openPanel === "snapshot" ? "#fff7ed" : undefined,
               }}>
               {criticalCount > 0 && (
                 <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full text-white text-[9px] font-bold flex items-center justify-center"
@@ -140,15 +141,13 @@ export default function BiocharDashboard({ dataSource }: Props) {
         </div>
       </header>
 
-      {/* ── Error banner ───────────────────────────────────────────── */}
       {dataSource.error && (
-        <div className="mx-6 mt-4 rounded-xl border px-4 py-3 text-sm"
-          style={{ background: C.dangerBg, borderColor: C.danger, color: "#991b1b" }}>
+        <div className="mx-6 mt-4 rounded-xl border px-4 py-3 text-sm border-l-4"
+          style={{ borderColor: C.border, borderLeftColor: C.danger, color: C.danger }}>
           <strong>{t("biochar.onaIssue")}</strong> {dataSource.error}
         </div>
       )}
 
-      {/* ── KPI rows ───────────────────────────────────────────────── */}
       <div className="px-6 pt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KpiCard
           label={t("biochar.kpi.totalBatches")}
@@ -201,7 +200,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
         </div>
       )}
 
-      {/* ── Tabs ───────────────────────────────────────────────────── */}
       <div className="px-6 mt-6">
         <div className="flex border-b" style={{ borderColor: C.border }}>
           {TABS.map(tab => (
@@ -220,7 +218,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
         </div>
       </div>
 
-      {/* ── Tab content ────────────────────────────────────────────── */}
       <div className="px-6 py-5">
         {!hasData ? (
           <div className="rounded-xl border bg-white px-6 py-12 text-center" style={{ borderColor: C.border }}>
@@ -240,7 +237,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
         )}
       </div>
 
-      {/* ── Footer ─────────────────────────────────────────────────── */}
       <footer className="px-6 pb-6">
         <div className="rounded-xl border bg-white px-4 py-3" style={{ borderColor: C.border }}>
           <div className="flex flex-wrap gap-3 text-xs" style={{ color: C.muted }}>
@@ -253,7 +249,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
         </div>
       </footer>
 
-      {/* ── Overlay backdrop ───────────────────────────────────────── */}
       {openPanel && (
         <div
           className="fixed inset-0 z-40"
@@ -262,7 +257,6 @@ export default function BiocharDashboard({ dataSource }: Props) {
         />
       )}
 
-      {/* ── Decision Snapshot drawer ───────────────────────────────── */}
       <aside
         className="fixed top-0 right-0 h-full z-50 flex flex-col bg-white shadow-2xl transition-transform duration-200"
         style={{
@@ -288,8 +282,8 @@ export default function BiocharDashboard({ dataSource }: Props) {
             ) : (
               <div className="space-y-2">
                 {snapshot.critical.map((item, i) => (
-                  <div key={i} className="rounded-lg px-3 py-2.5 text-sm"
-                    style={{ background: C.dangerBg, borderLeft: `3px solid ${C.danger}` }}>
+                  <div key={i} className="pl-3 py-2 border-l-2 text-sm"
+                    style={{ borderLeftColor: C.danger }}>
                     <p className="font-semibold" style={{ color: C.danger }}>{ALERT_TYPE_KEYS[item.type] ? t(ALERT_TYPE_KEYS[item.type]) : item.type}</p>
                     <p className="text-xs mt-0.5" style={{ color: C.muted }}>{item.site}</p>
                     <p className="text-xs mt-0.5" style={{ color: C.text }}>{item.detail}</p>
@@ -307,8 +301,8 @@ export default function BiocharDashboard({ dataSource }: Props) {
             ) : (
               <div className="space-y-2">
                 {snapshot.warnings.map((item, i) => (
-                  <div key={i} className="rounded-lg px-3 py-2.5 text-sm"
-                    style={{ background: C.warningBg, borderLeft: `3px solid ${C.warning}` }}>
+                  <div key={i} className="pl-3 py-2 border-l-2 text-sm"
+                    style={{ borderLeftColor: C.warning }}>
                     <p className="font-semibold" style={{ color: C.warning }}>{ALERT_TYPE_KEYS[item.type] ? t(ALERT_TYPE_KEYS[item.type]) : item.type}</p>
                     <p className="text-xs mt-0.5" style={{ color: C.muted }}>{item.site}</p>
                     <p className="text-xs mt-0.5" style={{ color: C.text }}>{item.detail}</p>

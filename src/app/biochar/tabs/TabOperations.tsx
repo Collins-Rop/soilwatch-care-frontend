@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import type { Batch } from "../data";
 import { ACTIVE_WINDOW_DAYS, SUBMISSION_LAG_SLA_DAYS } from "../data";
 import { daysBetween, daysAgo } from "../compute";
@@ -14,9 +15,11 @@ const C = {
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white border rounded-xl p-4 ${className}`} style={{ borderColor: C.border }}>
-      {children}
-    </div>
+    <Card className={className}>
+      <CardContent className="p-4">
+        {children}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -99,8 +102,8 @@ export default function TabOperations({
   return (
     <div className="space-y-4">
       {drillFilter && (
-        <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
-          style={{ background: C.warningBg, border: `1px solid ${C.warning}`, color: C.warning }}>
+        <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg border"
+          style={{ borderColor: C.border, color: C.muted }}>
           {t("tabOperations.showing", { filter: drillFilter.replace("_", " ") })}
           <button onClick={onClearDrill} className="ml-auto underline">{t("tabOperations.clearFilter")}</button>
         </div>
@@ -113,8 +116,8 @@ export default function TabOperations({
         ) : (
           <div className="space-y-1.5">
             {alerts.map((a, i) => (
-              <div key={i} className="flex items-start gap-3 rounded-lg px-3 py-2 text-sm"
-                style={{ background: a.type === "danger" ? C.dangerBg : C.warningBg, borderLeft: `3px solid ${a.type === "danger" ? C.danger : C.warning}` }}>
+              <div key={i} className="flex items-start gap-3 border-l-2 pl-3 py-2 text-sm"
+                style={{ borderLeftColor: a.type === "danger" ? C.danger : C.warning }}>
                 <span className="font-semibold flex-shrink-0" style={{ color: a.type === "danger" ? C.danger : C.warning }}>{a.site}</span>
                 <span style={{ color: C.text }}>{a.message}</span>
               </div>
@@ -185,7 +188,7 @@ export default function TabOperations({
                   <span className="text-xs" style={{ color: C.muted }}>{b.production_date} · {b.kiln_id} · {expandedNote === b.batch_id ? "▲" : "▼"}</span>
                 </button>
                 {expandedNote === b.batch_id && (
-                  <div className="px-2 pb-2 text-xs rounded-b" style={{ color: C.muted, background: "#fafaf8" }}>
+                  <div className="px-2 pb-2 text-xs" style={{ color: C.muted }}>
                     {b.operational_issues || b.batch_notes}
                   </div>
                 )}

@@ -4,11 +4,11 @@ type Variant = "earth" | "soil" | "red" | "carbon" | "stone" | "green";
 
 const variants: Record<Variant, string> = {
   earth:  "bg-[#fffbeb] text-[#92400e]",
-  soil:   "bg-[#f8f9fa] text-[#6b7280]",
-  red:    "bg-[#FADBD8] text-[#E74C3C]",
-  carbon: "bg-[#eff6ff] text-[#2E75B6]",
-  stone:  "bg-[#f8f9fa] text-[#6b7280]",
-  green:  "bg-[#D5F5E3] text-[#166534]",
+  soil:   "bg-[#f5f5f4] text-[#78716c]",
+  red:    "bg-[#fef2f2] text-[#b91c1c]",
+  carbon: "bg-[#eff6ff] text-[#1d4ed8]",
+  stone:  "bg-[#f5f5f4] text-[#78716c]",
+  green:  "bg-[#f0fdf4] text-[#15803d]",
 };
 
 export default function Badge({

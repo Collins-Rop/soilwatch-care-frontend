@@ -40,7 +40,6 @@ export default function Sidebar({ userName }: { userName?: string }) {
 
   return (
     <>
-      {/* Hamburger — mobile/tablet only, shown when sidebar is closed */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Open menu"
@@ -52,10 +51,9 @@ export default function Sidebar({ userName }: { userName?: string }) {
         `}
         style={{ background: "#1c1917" }}
       >
-        <Menu size={18} color="#fb923c" />
+        <Menu size={18} color="#ffffff" />
       </button>
 
-      {/* Backdrop — mobile/tablet only */}
       {open && (
         <div
           className="fixed inset-0 z-40 lg:hidden"
@@ -64,7 +62,6 @@ export default function Sidebar({ userName }: { userName?: string }) {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`
           fixed lg:static inset-y-0 left-0 z-50
@@ -75,18 +72,16 @@ export default function Sidebar({ userName }: { userName?: string }) {
         `}
         style={{ background: "#1c1917" }}
       >
-        {/* Header */}
         <div className="px-4 py-4 border-b border-stone-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Image src="/soilwatch-logo.jpg" alt="SoilWatch" width={28} height={28}
               className="rounded-md object-contain flex-shrink-0" />
             <div>
               <p className="text-white text-sm font-semibold leading-none">{t("app.name")}</p>
-              <p className="text-[11px] mt-0.5 font-medium" style={{ color: "#fb923c" }}>{t("app.tagline")}</p>
+              <p className="text-[11px] mt-0.5 font-medium" style={{ color: "#a8a29e" }}>{t("app.tagline")}</p>
             </div>
           </div>
 
-          {/* Close button — mobile/tablet only */}
           <button
             onClick={() => setOpen(false)}
             aria-label="Close menu"
@@ -100,7 +95,6 @@ export default function Sidebar({ userName }: { userName?: string }) {
           <LanguageSwitcher />
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-3 space-y-0.5">
           {NAV.map(({ href, key, icon: Icon }) => {
             const active = pathname === href || (href !== "/" && pathname.startsWith(href));
@@ -108,7 +102,7 @@ export default function Sidebar({ userName }: { userName?: string }) {
               <Link key={href} href={href}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors"
                 style={active
-                  ? { background: "rgba(194,65,12,0.2)", color: "#fb923c" }
+                  ? { background: "rgba(255,255,255,0.08)", color: "#ffffff" }
                   : { color: "#a8a29e" }
                 }
               >
@@ -121,11 +115,10 @@ export default function Sidebar({ userName }: { userName?: string }) {
           })}
         </nav>
 
-        {/* Footer */}
         <div className="px-4 py-4 border-t border-stone-800">
           {userName && <p className="text-xs text-stone-400 truncate mb-2">{userName}</p>}
           <button onClick={signOut}
-            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-red-400 transition-colors">
+            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-white transition-colors">
             <LogOut size={12} />
             {t("sidebar.signOut")}
           </button>

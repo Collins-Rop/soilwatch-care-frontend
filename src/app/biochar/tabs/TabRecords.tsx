@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, Area, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ComposedChart, Area, Line } from "recharts";
+import { Card, CardContent } from "@/components/ui/card";
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import type { Batch } from "../data";
 import { MOISTURE_ESTIMATE, SUBMISSION_LAG_SLA_DAYS } from "../data";
 import type { DashboardKpis } from "../compute";
@@ -14,9 +16,11 @@ const C = {
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white border rounded-xl p-4 ${className}`} style={{ borderColor: C.border }}>
-      {children}
-    </div>
+    <Card className={`overflow-visible ${className}`}>
+      <CardContent className="p-4">
+        {children}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -46,6 +50,13 @@ interface Props {
 export default function TabRecords({ df, kpis, dateFrom, dateTo }: Props) {
   const { t } = useLanguage();
   const [search, setSearch] = useState("");
+
+  const cumulConfig: ChartConfig = {
+    wet: { label: t("tabRecords.legend.wetKg"),    color: "#c2410c" },
+    dry: { label: t("tabRecords.legend.dryKgEst"), color: "#b45309" },
+  };
+  const lagConfig: ChartConfig = { lag: { label: "days" } };
+  const missingConfig: ChartConfig = { pct: { label: "%" } };
 
   const filtered = search
     ? df.filter(b =>
@@ -129,7 +140,6 @@ td,th{border:1px solid #e7e5e4;padding:8px;text-align:left}th{background:#9a3412
 
   return (
     <div className="space-y-4">
-      {/* Carbon summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: t("tabRecords.wetBiochar"), value: `${totalWet.toFixed(0)} kg`, sub: t("tabRecords.wetBiochar.sub") },
@@ -147,19 +157,18 @@ td,th{border:1px solid #e7e5e4;padding:8px;text-align:left}th{background:#9a3412
 
       <Panel>
         <SectionLabel>{t("tabRecords.cumulativeOutput")}</SectionLabel>
-        <ResponsiveContainer width="100%" height={200}>
+        <ChartContainer config={cumulConfig} className="h-[200px]">
           <ComposedChart data={cumData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
             <XAxis dataKey="date" tick={{ fontSize: 10 }} />
             <YAxis tickFormatter={v => `${v} kg`} tick={{ fontSize: 10 }} />
-            <Tooltip formatter={(v: unknown) => [`${v} kg`]} />
-            <Area type="monotone" dataKey="wet" fill={C.brand} fillOpacity={0.1} stroke={C.brand} name={t("tabRecords.legend.wetKg")} />
-            <Line type="monotone" dataKey="dry" stroke={C.warning} dot={false} name={t("tabRecords.legend.dryKgEst")} strokeDasharray="4 2" />
+            <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
+            <Area type="monotone" dataKey="wet" fill="var(--color-wet)" fillOpacity={0.1} stroke="var(--color-wet)" name={t("tabRecords.legend.wetKg")} />
+            <Line type="monotone" dataKey="dry" stroke="var(--color-dry)" dot={false} name={t("tabRecords.legend.dryKgEst")} strokeDasharray="4 2" />
           </ComposedChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </Panel>
 
-      {/* Submission lag */}
       {lags.length > 0 && (
         <Panel>
           <SectionLabel>{t("tabRecords.submissionLag")}</SectionLabel>
@@ -175,37 +184,35 @@ td,th{border:1px solid #e7e5e4;padding:8px;text-align:left}th{background:#9a3412
               </div>
             ))}
           </div>
-          <ResponsiveContainer width="100%" height={120}>
+          <ChartContainer config={lagConfig} className="h-[120px]">
             <BarChart data={df.slice().sort((a, b) => a.production_date.localeCompare(b.production_date)).map(b => ({ batch: b.batch_id.slice(-3), lag: b.submission_lag_days }))}>
               <XAxis dataKey="batch" tick={{ fontSize: 9 }} />
               <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: unknown) => [`${v}d`, t("tabRecords.lag.tooltip")]} />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
               <Bar dataKey="lag" radius={[2, 2, 0, 0]}>
                 {df.map((b, i) => <Cell key={i} fill={b.submission_lag_days > SUBMISSION_LAG_SLA_DAYS ? C.danger : C.brand} />)}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </Panel>
       )}
 
-      {/* Missing data */}
       {missingData.length > 0 && (
         <Panel>
           <SectionLabel>{t("tabRecords.completenessGaps")}</SectionLabel>
-          <ResponsiveContainer width="100%" height={120}>
+          <ChartContainer config={missingConfig} className="h-[120px]">
             <BarChart data={missingData} layout="vertical" margin={{ top: 0, right: 52, left: 8, bottom: 0 }}>
               <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10 }} />
               <YAxis type="category" dataKey="label" tick={{ fontSize: 10 }} width={120} />
-              <Tooltip formatter={(v: unknown) => [`${(v as number).toFixed(0)}%`, t("tabRecords.missing")]} />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
               <Bar dataKey="pct" radius={[0, 3, 3, 0]}>
                 {missingData.map((r, i) => <Cell key={i} fill={r.pct > 80 ? C.danger : r.pct > 40 ? C.warning : C.brand} />)}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </Panel>
       )}
 
-      {/* Batch records table */}
       <Panel>
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -227,7 +234,7 @@ td,th{border:1px solid #e7e5e4;padding:8px;text-align:left}th{background:#9a3412
               {t("tabRecords.exportCsv")}
             </button>
             <button onClick={exportReport}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80"
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-white"
               style={{ background: C.brand }}>
               {t("tabRecords.exportReport")}
             </button>
@@ -238,7 +245,7 @@ td,th{border:1px solid #e7e5e4;padding:8px;text-align:left}th{background:#9a3412
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder={t("tabRecords.searchPlaceholder")}
-          className="w-full rounded-lg border px-3 py-2 text-sm mb-3 outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400/30"
+          className="w-full rounded-lg border px-3 py-2 text-sm mb-3 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-200"
           style={{ borderColor: C.border }}
         />
         <div className="overflow-x-auto">
