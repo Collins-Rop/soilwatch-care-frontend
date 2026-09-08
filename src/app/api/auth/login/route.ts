@@ -5,7 +5,7 @@ const BACKEND_URL = process.env.FASTAPI_URL ?? "http://localhost:8000";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  const email    = typeof body?.email    === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 
   if (!email || !password) {
@@ -51,6 +51,8 @@ export async function POST(request: Request) {
 
   const token = await createSessionToken({ email, name, role });
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(sessionCookieOptions(token));
+  response.cookies.set(await sessionCookieOptions(payload));
+  response.cookies.set(accessCookieOptions(accessToken));
+  response.cookies.set(refreshCookieOptions(refreshToken));
   return response;
 }

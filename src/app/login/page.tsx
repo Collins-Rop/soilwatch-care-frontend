@@ -55,6 +55,8 @@ function Field({
   );
 }
 
+// ── Error banner ──────────────────────────────────────────────────────────────
+
 function ErrorBanner({ msg }: { msg: string }) {
   return (
     <div className="rounded-lg border px-3 py-2.5 text-sm"
