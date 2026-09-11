@@ -4,6 +4,10 @@ import Sidebar from "@/components/Sidebar";
 import { getSession } from "@/lib/auth";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { getLocale } from "@/lib/i18n/server";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "CARE dMRV | SoilWatch",
@@ -17,10 +21,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   ]);
 
   return (
-    <html lang={locale} className="h-full">
+    <html lang={locale} className={cn("h-full", "font-sans", geist.variable)}>
       <body className="h-full flex overflow-hidden bg-[#fafaf8]">
         <LanguageProvider initialLocale={locale}>
-          {session && <Sidebar userName={session.name} />}
+          {session && <Sidebar userName={session.name} role={session.role} />}
           <main className={`flex-1 overflow-y-auto ${session ? "pt-14 lg:pt-0" : ""}`}>{children}</main>
         </LanguageProvider>
       </body>

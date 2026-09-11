@@ -26,15 +26,15 @@ export default async function ReportsPage() {
         {reports.map((report) => {
           const available = report.status === availableStatus;
           return (
-            <section key={report.title} className="bg-white rounded-lg border p-4" style={{ borderColor: "#e9ecef", opacity: available ? 1 : 0.78 }}>
+            <section key={report.title} className="bg-white rounded-lg border p-4" style={{ borderColor: "#e7e5e4", opacity: available ? 1 : 0.7 }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: available ? "#D5F5E3" : "#f8f9fa" }}>
-                    {available ? <FileText size={16} style={{ color: "#27AE60" }} /> : <Lock size={16} style={{ color: "#6b7280" }} />}
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: available ? "#f0fdf4" : "#f5f5f4" }}>
+                    {available ? <FileText size={16} style={{ color: "#15803d" }} /> : <Lock size={16} style={{ color: "#a8a29e" }} />}
                   </div>
                   <div>
-                    <h2 className="text-base font-semibold" style={{ color: "#1F3864" }}>{report.title}</h2>
-                    <p className="mt-1 text-xs" style={{ color: "#6b7280" }}>{report.status}</p>
+                    <h2 className="text-sm font-semibold" style={{ color: "#1c1917" }}>{report.title}</h2>
+                    <p className="mt-1 text-xs" style={{ color: "#78716c" }}>{report.status}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">

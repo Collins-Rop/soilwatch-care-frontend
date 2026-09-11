@@ -1,9 +1,10 @@
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  LineChart, Line, ComposedChart, Area,
+  ComposedChart, Area, Line,
   PieChart, Pie, Cell, ScatterChart, Scatter,
-  ResponsiveContainer,
 } from "recharts";
+import { Card, CardContent } from "@/components/ui/card";
+import { ChartContainer, ChartTooltipContent, ChartLegendContent, type ChartConfig } from "@/components/ui/chart";
 import type { Batch } from "../data";
 import { PYRO_MIN, PYRO_MAX, COMPLIANCE_WINDOW_DAYS } from "../data";
 import { daysAgo } from "../compute";
@@ -33,9 +34,11 @@ const COMPLIANCE_DEFS: [keyof Batch, string, boolean][] = [
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white border rounded-xl p-4 ${className}`} style={{ borderColor: C.border }}>
-      {children}
-    </div>
+    <Card className={`overflow-visible ${className}`}>
+      <CardContent className="p-4">
+        {children}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -46,6 +49,23 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export default function TabQuality({ df }: { df: Batch[] }) {
   const { t } = useLanguage();
   const recent = df.slice(0, 12);
+
+  const compConfig: ChartConfig = { pct: { label: "%" } };
+  const monthConfig: ChartConfig = {
+    compliant: { label: t("tabQuality.legend.compliant"), color: "#15803d" },
+    non_compliant: { label: t("tabQuality.legend.nonCompliant"), color: "#b91c1c" },
+  };
+  const trendConfig: ChartConfig = {
+    avgQuality: { label: t("tabQuality.legend.avgQuality"), color: "#c2410c" },
+    avgDuration: { label: t("tabQuality.legend.avgDuration"), color: "#b45309" },
+  };
+  const qualDistConfig: ChartConfig = {
+    excellent: { label: "Excellent", color: "#15803d" },
+    good:      { label: "Good",      color: "#65a30d" },
+    fair:      { label: "Fair",      color: "#b45309" },
+    poor:      { label: "Poor",      color: "#b91c1c" },
+  };
+  const scatterConfig: ChartConfig = { y: { label: "score", color: "#c2410c" } };
 
   const compRate = COMPLIANCE_DEFS.map(([col, labelKey, csi]) => {
     const label = t(labelKey);
@@ -119,8 +139,8 @@ export default function TabQuality({ df }: { df: Batch[] }) {
                   {recent.map(b => {
                     const pass = b[col] as unknown as boolean;
                     return (
-                      <td key={b.batch_id} className="text-center px-0.5 py-0.5"
-                        style={{ background: pass ? C.successBg : C.dangerBg, color: pass ? "#166534" : "#991b1b" }}>
+                      <td key={b.batch_id} className="text-center px-0.5 py-0.5 font-medium"
+                        style={{ color: pass ? C.success : C.danger }}>
                         {pass ? "✓" : "✗"}
                       </td>
                     );
@@ -135,54 +155,54 @@ export default function TabQuality({ df }: { df: Batch[] }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Panel>
           <SectionLabel>{t("tabQuality.complianceByRequirement")}</SectionLabel>
-          <ResponsiveContainer width="100%" height={300}>
+          <ChartContainer config={compConfig} className="h-[300px]">
             <BarChart data={compRate} layout="vertical" margin={{ top: 0, right: 52, left: 8, bottom: 0 }}>
               <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10 }} />
               <YAxis type="category" dataKey="label" tick={{ fontSize: 9 }} width={160} />
-              <Tooltip formatter={(v: unknown) => [`${(v as number).toFixed(0)}%`]} />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
               <Bar dataKey="pct" radius={[0, 4, 4, 0]}>
                 {compRate.map((r, i) => <Cell key={i} fill={r.pct >= 80 ? C.success : r.pct >= 50 ? C.warning : C.danger} />)}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </Panel>
 
         <Panel>
           <SectionLabel>{t("tabQuality.complianceByMonth")}</SectionLabel>
-          <ResponsiveContainer width="100%" height={300}>
+          <ChartContainer config={monthConfig} className="h-[300px]">
             <BarChart data={monthData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
               <XAxis dataKey="month" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="compliant" stackId="a" fill={C.success} name={t("tabQuality.legend.compliant")} radius={[0, 0, 0, 0]} />
-              <Bar dataKey="non_compliant" stackId="a" fill={C.danger} name={t("tabQuality.legend.nonCompliant")} radius={[2, 2, 0, 0]} />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
+              <Legend content={<ChartLegendContent />} />
+              <Bar dataKey="compliant" stackId="a" fill="var(--color-compliant)" name={t("tabQuality.legend.compliant")} radius={[0, 0, 0, 0]} />
+              <Bar dataKey="non_compliant" stackId="a" fill="var(--color-non_compliant)" name={t("tabQuality.legend.nonCompliant")} radius={[2, 2, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </Panel>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Panel>
           <SectionLabel>{t("tabQuality.qualityTrend")}</SectionLabel>
-          <ResponsiveContainer width="100%" height={200}>
+          <ChartContainer config={trendConfig} className="h-[200px]">
             <ComposedChart data={trendData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
               <XAxis dataKey="week" tick={{ fontSize: 10 }} />
               <YAxis yAxisId="q" domain={[0, 4]} tick={{ fontSize: 10 }} />
               <YAxis yAxisId="d" orientation="right" tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Legend />
-              <Area yAxisId="q" type="monotone" dataKey="avgQuality" fill={C.brand} fillOpacity={0.1} stroke={C.brand} name={t("tabQuality.legend.avgQuality")} />
-              <Line yAxisId="d" type="monotone" dataKey="avgDuration" stroke={C.warning} dot={false} name={t("tabQuality.legend.avgDuration")} />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
+              <Legend content={<ChartLegendContent />} />
+              <Area yAxisId="q" type="monotone" dataKey="avgQuality" fill="var(--color-avgQuality)" fillOpacity={0.1} stroke="var(--color-avgQuality)" />
+              <Line yAxisId="d" type="monotone" dataKey="avgDuration" stroke="var(--color-avgDuration)" dot={false} />
             </ComposedChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </Panel>
 
         <Panel>
           <SectionLabel>{t("tabQuality.qualityDistribution")}</SectionLabel>
-          <ResponsiveContainer width="100%" height={200}>
+          <ChartContainer config={qualDistConfig} className="h-[200px]">
             <PieChart>
               <Pie data={qData} dataKey="value" nameKey="name" cx="50%" cy="50%"
                 outerRadius={70} innerRadius={30}
@@ -190,24 +210,24 @@ export default function TabQuality({ df }: { df: Batch[] }) {
                 labelLine={false}>
                 {qData.map((e, i) => <Cell key={i} fill={qColors[e.key] ?? "#a8a29e"} />)}
               </Pie>
-              <Tooltip />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
             </PieChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </Panel>
       </div>
 
       <Panel>
         <SectionLabel>{t("tabQuality.scatter")}</SectionLabel>
-        <ResponsiveContainer width="100%" height={180}>
+        <ChartContainer config={scatterConfig} className="h-[180px]">
           <ScatterChart margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
             <XAxis type="number" dataKey="x" name={t("tabQuality.scatter.duration")} tick={{ fontSize: 10 }}
               label={{ value: t("tabQuality.scatter.duration"), position: "insideBottom", offset: -2, fontSize: 10 }} />
             <YAxis type="number" dataKey="y" name={t("tabQuality.scatter.quality")} domain={[0, 5]} tick={{ fontSize: 10 }} />
-            <Tooltip cursor={{ strokeDasharray: "3 3" }} formatter={(v, n) => [v, n === "x" ? t("tabQuality.scatter.duration") : t("tabQuality.scatter.quality")]} />
-            <Scatter data={scatterData} fill={C.brand} fillOpacity={0.6} />
+            <Tooltip cursor={{ strokeDasharray: "3 3" }} content={<ChartTooltipContent />} />
+            <Scatter data={scatterData} fill="var(--color-y)" fillOpacity={0.6} />
           </ScatterChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </Panel>
 
       {devBatches.length > 0 && (

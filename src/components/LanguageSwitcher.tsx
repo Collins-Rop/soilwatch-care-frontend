@@ -24,7 +24,7 @@ export default function LanguageSwitcher({ variant = "dark" }: { variant?: "dark
       <div className="flex rounded-lg p-0.5 gap-0.5"
         style={dark
           ? { background: "#0c0a09", border: "1px solid #44403c" }
-          : { background: "#f1f5f9", border: "1px solid #e2e8f0" }
+          : { background: "#f5f5f4", border: "1px solid #e7e5e4" }
         }>
         {OPTIONS.map(opt => (
           <button
@@ -34,7 +34,7 @@ export default function LanguageSwitcher({ variant = "dark" }: { variant?: "dark
             className="flex-1 text-xs px-2.5 py-1.5 rounded-md transition-colors font-medium"
             style={locale === opt.code
               ? { background: "#c2410c", color: "#fff" }
-              : { color: dark ? "#d6d3d1" : "#475569" }
+              : { color: dark ? "#d6d3d1" : "#78716c" }
             }
           >
             {opt.label}

@@ -1,8 +1,11 @@
+import { useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, Cell, ReferenceLine, ReferenceArea,
+  Cell, ReferenceLine, ReferenceArea,
   PieChart, Pie,
 } from "recharts";
+import { Card, CardContent } from "@/components/ui/card";
+import { ChartContainer, ChartTooltipContent, ChartLegendContent, type ChartConfig } from "@/components/ui/chart";
 import type { Batch, FeedstockAppearance } from "../data";
 import { PYRO_MIN, PYRO_MAX } from "../data";
 import type { SiteTrend, OperatorScore } from "../compute";
@@ -21,7 +24,7 @@ const C = {
   border: "#e7e5e4", text: "#1c1917", muted: "#78716c",
   success: "#15803d", danger: "#b91c1c", warning: "#b45309",
 };
-const SERIES = ["#c2410c","#b45309","#15803d","#1d4ed8","#7c3aed","#0e7490","#be185d","#374151"];
+const SERIES = ["#0088FE","#00C49F","#FFBB28","#FF8042","#8884d8","#82ca9d","#a4de6c","#ffc658"];
 const FEED_COLOR: Record<FeedstockAppearance, string> = {
   dry: "#15803d", mostly_dry: "#65a30d", partially_wet: "#b45309", wet: "#b91c1c",
 };
@@ -36,9 +39,11 @@ function seriesColor(id: string) {
 
 function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white border rounded-xl p-4 ${className}`} style={{ borderColor: C.border }}>
-      {children}
-    </div>
+    <Card className={`overflow-visible ${className}`}>
+      <CardContent className="p-4">
+        {children}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -55,6 +60,18 @@ interface Props {
 export default function TabProduction({ df, siteTrends, operatorScores }: Props) {
   const { t } = useLanguage();
   const kilnIds = [...new Set(df.map(b => b.kiln_id))].sort();
+
+  const kilnChartConfig = useMemo((): ChartConfig =>
+    Object.fromEntries(kilnIds.map(k => [k, { label: k, color: seriesColor(k) }])),
+    [kilnIds]
+  );
+  const kilnSummaryConfig: ChartConfig = { totalKg: { label: "kg" } };
+  const opSummaryConfig: ChartConfig = { totalKg: { label: "kg" } };
+  const feedConfig: ChartConfig = Object.fromEntries(
+    Object.entries(FEED_COLOR).map(([k, c]) => [k, { label: k, color: c }])
+  ) as ChartConfig;
+  const smokeConfig: ChartConfig = { count: { label: "count" } };
+  const pyroConfig: ChartConfig = { min: { label: "min" } };
 
   // Daily timeline
   const dailyMap: Record<string, Record<string, number>> = {};
@@ -106,32 +123,32 @@ export default function TabProduction({ df, siteTrends, operatorScores }: Props)
     <div className="space-y-4">
       <Panel>
         <SectionLabel>{t("tabProduction.outputOverTime")}</SectionLabel>
-        <ResponsiveContainer width="100%" height={260}>
+        <ChartContainer config={kilnChartConfig} className="h-[260px]">
           <BarChart data={dailyData} margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
             <XAxis dataKey="date" tick={{ fontSize: 10 }} />
             <YAxis tickFormatter={v => `${v} kg`} tick={{ fontSize: 10 }} />
-            <Tooltip formatter={(v: unknown, n: unknown) => [`${(v as number).toFixed(0)} kg`, n as string]} />
-            <Legend />
-            {kilnIds.map(k => <Bar key={k} dataKey={k} stackId="a" fill={seriesColor(k)} name={k} radius={[2, 2, 0, 0]} />)}
+            <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
+            <Legend content={<ChartLegendContent />} />
+            {kilnIds.map(k => <Bar key={k} dataKey={k} stackId="a" fill={`var(--color-${k})`} name={k} radius={[2, 2, 0, 0]} />)}
           </BarChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </Panel>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Panel>
           <SectionLabel>{t("tabProduction.byKiln")}</SectionLabel>
-          <ResponsiveContainer width="100%" height={140}>
+          <ChartContainer config={kilnSummaryConfig} className="h-[140px]">
             <BarChart data={kilnSummary} layout="vertical" margin={{ top: 0, right: 64, left: 32, bottom: 0 }}>
               <XAxis type="number" tick={{ fontSize: 10 }} />
               <YAxis type="category" dataKey="kiln_id" tick={{ fontSize: 11 }} width={36} />
-              <Tooltip formatter={(v: unknown) => [`${(v as number).toFixed(0)} kg`]} />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
               <Bar dataKey="totalKg" radius={[0, 4, 4, 0]}
                 label={{ position: "right", fontSize: 10, formatter: (v: unknown) => `${(v as number).toFixed(0)} kg` }}>
                 {kilnSummary.map((r, i) => <Cell key={i} fill={seriesColor(r.kiln_id)} />)}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
           <table className="w-full text-xs mt-3 border-t" style={{ borderColor: C.border }}>
             <thead><tr style={{ color: C.muted }}>
               <th className="text-left py-1">{t("tabProduction.col.kiln")}</th>
@@ -159,17 +176,17 @@ export default function TabProduction({ df, siteTrends, operatorScores }: Props)
 
         <Panel>
           <SectionLabel>{t("tabProduction.byOperator")}</SectionLabel>
-          <ResponsiveContainer width="100%" height={140}>
+          <ChartContainer config={opSummaryConfig} className="h-[140px]">
             <BarChart data={opSummary} layout="vertical" margin={{ top: 0, right: 64, left: 8, bottom: 0 }}>
               <XAxis type="number" tick={{ fontSize: 10 }} />
               <YAxis type="category" dataKey="operator" tick={{ fontSize: 11 }} width={52} />
-              <Tooltip formatter={(v: unknown) => [`${(v as number).toFixed(0)} kg`]} />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
               <Bar dataKey="totalKg" radius={[0, 4, 4, 0]}
                 label={{ position: "right", fontSize: 10, formatter: (v: unknown) => `${(v as number).toFixed(0)} kg` }}>
                 {opSummary.map((r, i) => <Cell key={i} fill={r.color} />)}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
           <table className="w-full text-xs mt-3 border-t" style={{ borderColor: C.border }}>
             <thead><tr style={{ color: C.muted }}>
               <th className="text-left py-1">{t("tabProduction.col.operator")}</th>
@@ -220,7 +237,7 @@ export default function TabProduction({ df, siteTrends, operatorScores }: Props)
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Panel>
           <SectionLabel>{t("tabProduction.feedstockCondition")}</SectionLabel>
-          <ResponsiveContainer width="100%" height={180}>
+          <ChartContainer config={feedConfig} className="h-[180px]">
             <PieChart>
               <Pie data={fcData} dataKey="value" nameKey="name" cx="50%" cy="50%"
                 outerRadius={65} innerRadius={28}
@@ -228,30 +245,30 @@ export default function TabProduction({ df, siteTrends, operatorScores }: Props)
                 labelLine={false}>
                 {fcData.map((e, i) => <Cell key={i} fill={FEED_COLOR[e.key as FeedstockAppearance] ?? "#a8a29e"} />)}
               </Pie>
-              <Tooltip />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
             </PieChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </Panel>
         <Panel>
           <SectionLabel>{t("tabProduction.smokeObservation")}</SectionLabel>
-          <ResponsiveContainer width="100%" height={180}>
+          <ChartContainer config={smokeConfig} className="h-[180px]">
             <BarChart data={smData} margin={{ top: 4, right: 8, bottom: 20, left: 0 }}>
               <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" interval={0} />
               <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
               <Bar dataKey="count" radius={[3, 3, 0, 0]}>
                 {smData.map((e, i) => <Cell key={i} fill={SMOKE_COLOR[e.key] ?? "#a8a29e"} />)}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </Panel>
         <Panel>
           <SectionLabel>{t("tabProduction.pyrolysisDuration")}</SectionLabel>
-          <ResponsiveContainer width="100%" height={180}>
+          <ChartContainer config={pyroConfig} className="h-[180px]">
             <BarChart data={pyroData} layout="vertical" margin={{ top: 0, right: 52, bottom: 0, left: 24 }}>
               <XAxis type="number" domain={[0, pyroMax]} tick={{ fontSize: 9 }} />
               <YAxis type="category" dataKey="batch" tick={{ fontSize: 9 }} />
-              <Tooltip formatter={(v: unknown) => [`${v as number} min`]} />
+              <Tooltip cursor={{ fill: '#f5f5f4', strokeWidth: 0 }} content={<ChartTooltipContent />} />
               <ReferenceLine x={PYRO_MIN} stroke={C.danger} strokeDasharray="3 2" />
               <ReferenceLine x={PYRO_MAX} stroke={C.danger} strokeDasharray="3 2" />
               <ReferenceArea x1={PYRO_MIN} x2={PYRO_MAX} fill={C.success} fillOpacity={0.06} />
@@ -260,7 +277,7 @@ export default function TabProduction({ df, siteTrends, operatorScores }: Props)
                 {pyroData.map((e, i) => <Cell key={i} fill={e.inRange ? seriesColor(e.kiln) : C.danger} />)}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </Panel>
       </div>
     </div>

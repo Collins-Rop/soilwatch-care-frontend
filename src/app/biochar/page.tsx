@@ -1,4 +1,4 @@
-import BiocharDashboard from "./BiocharDashboard";
+import BiocharDashboard from "../../components/BiocharDashboard";
 import { loadBiocharData } from "./ona";
 
 export const dynamic = "force-dynamic";
