@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, FlameKindling, MapPin, FileBarChart2, Menu, X, LogOut } from "lucide-react";
+import { LayoutDashboard, FlameKindling, MapPin, FileBarChart2, Settings, Menu, X, LogOut } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import LanguageSwitcher from "./LanguageSwitcher";
 
@@ -15,7 +15,7 @@ const NAV = [
   { href: "/reports", key: "nav.reports",    icon: FileBarChart2 },
 ];
 
-export default function Sidebar({ userName }: { userName?: string }) {
+export default function Sidebar({ userName, role }: { userName?: string; role?: string }) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -113,6 +113,23 @@ export default function Sidebar({ userName }: { userName?: string }) {
               </Link>
             );
           })}
+          {role === "admin" && (() => {
+            const active = pathname.startsWith("/admin");
+            return (
+              <Link href="/admin"
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors mt-1"
+                style={active
+                  ? { background: "rgba(255,255,255,0.08)", color: "#ffffff" }
+                  : { color: "#a8a29e" }
+                }
+              >
+                <Settings size={14} style={{ flexShrink: 0 }} />
+                <span className={active ? "font-medium" : "hover:text-white transition-colors"}>
+                  Admin
+                </span>
+              </Link>
+            );
+          })()}
         </nav>
 
         <div className="px-4 py-4 border-t border-stone-800">

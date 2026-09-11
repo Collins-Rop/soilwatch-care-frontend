@@ -3,7 +3,7 @@ import { getSessionFromRequest } from "@/lib/auth";
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login"];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) return NextResponse.next();
 
@@ -13,6 +13,11 @@ export async function middleware(req: NextRequest) {
     loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
   }
+
+  if (pathname.startsWith("/admin") && session.role !== "admin") {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
   return NextResponse.next();
 }
 
